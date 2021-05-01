@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\CurrencyController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Route;
@@ -15,24 +16,37 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:api')->get('/user', function (Request $request) {
-    return $request->user();
-});
-Route::get('/convert/swop/{to}', function ($to, Request $request) {
+Route::get('/currencies', [CurrencyController::class, 'getCurrencies']);
 
-    $response = Http::withHeaders([
-        'Authorization' => 'ApiKey '.env('SWOP_KEY')
-    ])->get('https://swop.cx/rest/rates/EUR/'.$to);
+Route::post('/convert', [CurrencyController::class, 'convertCurrencies']);
 
-    return $response->json();
-});
+Route::post('/saveConversion', [CurrencyController::class, 'saveConversion']);
 
-Route::get('/convert/rapidapi/{to}', function ($to, Request $request) {
 
-    $response = Http::withHeaders([
-        'x-rapidapi-key' => env('RAPID_KEY')
-    ])->get('https://currency-exchange.p.rapidapi.com/listquotes');
+//Route::get('/convert/swop/currencies', function (Request $request) {
+//
+//    $response = Http::withHeaders([
+//        'Authorization' => 'ApiKey ' . env('SWOP_KEY')
+//    ])->get('https://swop.cx/rest/rates');
+//
+//    return $response->json();
+//});
 
-    return $response->json();
-});
+//Route::get('/convert/swop/{to}', function ($to, Request $request) {
+//
+//    $response = Http::withHeaders([
+//        'Authorization' => 'ApiKey ' . env('SWOP_KEY')
+//    ])->get('https://swop.cx/rest/rates/EUR/' . $to);
+//
+//    return $response->json();
+//});
+//
+//Route::get('/convert/rapidapi/{to}', function ($to, Request $request) {
+//
+//    $response = Http::withHeaders([
+//        'x-rapidapi-key' => env('RAPID_KEY')
+//    ])->get('https://currency-exchange.p.rapidapi.com/listquotes');
+//
+//    return $response->json();
+//});
 
