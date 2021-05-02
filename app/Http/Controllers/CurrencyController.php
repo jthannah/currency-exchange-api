@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use http\Env\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -75,20 +76,42 @@ class CurrencyController extends Controller
         // TODO: use a real database.. this is incredibly brittle and dangerous
         $jsonDb = json_decode(file_get_contents("../storage/savedConversions.json"));
 
-        // $out->writeln(print_r($jsonDb, true));
         // Build out the object to save
         $conversion = (object)[];
         $conversion->email = $request->get('email');
         $conversion->conversionRequest = $request->get('conversionRequest');
 
         // Only add the record if an exact copy doesn't already exist
-        if (in_array($conversion, $jsonDb)) {
+        if (!in_array($conversion, $jsonDb)) {
             array_push($jsonDb, $conversion);
         }
 
         file_put_contents("../storage/savedConversions.json", json_encode($jsonDb));
 
         return true;
+    }
+
+    public function getConversions(Request $request): JsonResponse
+    {
+        $out = new \Symfony\Component\Console\Output\ConsoleOutput();
+
+        if (!$request->has('email')) {
+            $out->writeln('Missing a required field');
+            // TODO: return error code with message
+        }
+
+        $email = $request->get('email');
+
+        // TODO: use a real database.. this is incredibly brittle and dangerous
+        $jsonDb = json_decode(file_get_contents("../storage/savedConversions.json"));
+
+        // get only the objects for the passed in email
+        // use array_values to 'reset' the array index values
+        $conversions = array_values(array_filter($jsonDb, fn($e) => $e->email == $email));
+        // we only care about returning the conversions request data
+        $conversions = array_map(fn($e) => $e->conversionRequest, $conversions);
+
+        return response()->json($conversions);
     }
 
     private function requestCurrencies(): array

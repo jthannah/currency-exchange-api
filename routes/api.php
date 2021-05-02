@@ -22,6 +22,8 @@ Route::post('/convert', [CurrencyController::class, 'convertCurrencies']);
 
 Route::post('/saveConversion', [CurrencyController::class, 'saveConversion']);
 
+Route::post('/getConversions', [CurrencyController::class, 'getConversions']);
+
 
 //Route::get('/convert/swop/currencies', function (Request $request) {
 //
