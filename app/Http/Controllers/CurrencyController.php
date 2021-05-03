@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use http\Env\Response;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use function MongoDB\BSON\toJSON;
 
@@ -73,20 +74,11 @@ class CurrencyController extends Controller
             // TODO: return error code with message
         }
 
-        // TODO: use a real database.. this is incredibly brittle and dangerous
-        $jsonDb = json_decode(file_get_contents("../storage/savedConversions.json"));
-
-        // Build out the object to save
-        $conversion = (object)[];
-        $conversion->email = $request->get('email');
-        $conversion->conversionRequest = $request->get('conversionRequest');
-
-        // Only add the record if an exact copy doesn't already exist
-        if (!in_array($conversion, $jsonDb)) {
-            array_push($jsonDb, $conversion);
-        }
-
-        file_put_contents("../storage/savedConversions.json", json_encode($jsonDb));
+        // json encode the conversion request to store it in the DB
+        $conversionRequest = json_encode($request->input('conversionRequest'));
+        DB::table('user_conversions')->upsert([
+            ['email' => $request->input('email'), 'conversion_request' => $conversionRequest]
+        ], ['email', 'conversion_request'], ['email', 'conversion_request']);
 
         return true;
     }
@@ -101,15 +93,14 @@ class CurrencyController extends Controller
         }
 
         $email = $request->get('email');
+        $conversions = DB::table('user_conversions')
+            ->where('email', '=', $email)
+            ->pluck('conversion_request')
+            ->toArray();
 
-        // TODO: use a real database.. this is incredibly brittle and dangerous
-        $jsonDb = json_decode(file_get_contents("../storage/savedConversions.json"));
-
-        // get only the objects for the passed in email
-        // use array_values to 'reset' the array index values
-        $conversions = array_values(array_filter($jsonDb, fn($e) => $e->email == $email));
-        // we only care about returning the conversions request data
-        $conversions = array_map(fn($e) => $e->conversionRequest, $conversions);
+        // The conversion_request is saved json encoded, so we have to decode it here before the entire response
+        // object is json encoded.
+        $conversions = array_map(fn($a) => json_decode($a), $conversions);
 
         return response()->json($conversions);
     }

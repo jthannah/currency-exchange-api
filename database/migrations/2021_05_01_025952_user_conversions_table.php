@@ -14,8 +14,9 @@ class UserConversionsTable extends Migration
     public function up()
     {
         Schema::create('user_conversions', function (Blueprint $table) {
-            $table->string('email')->unique();
-            $table->string('conversion_request');
+            $table->string('email');
+            $table->json('conversion_request');
+            $table->unique(['email', 'conversion_request']);
         });
     }
 
